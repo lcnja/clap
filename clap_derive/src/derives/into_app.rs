@@ -179,7 +179,7 @@ pub fn gen_app_augmentation(
 ) -> TokenStream {
     let mut subcmds = fields.iter().filter_map(|field| {
         let attrs = Attrs::from_field(
-            &field,
+            field,
             parent_attribute.casing(),
             parent_attribute.env_casing(),
         );
@@ -231,7 +231,10 @@ pub fn gen_app_augmentation(
         );
         let kind = attrs.kind();
         match &*kind {
-            Kind::Subcommand(_) | Kind::Skip(_) | Kind::ExternalSubcommand => None,
+            Kind::Subcommand(_)
+            | Kind::Skip(_)
+            | Kind::FromGlobal(_)
+            | Kind::ExternalSubcommand => None,
             Kind::Flatten => {
                 let ty = &field.ty;
                 Some(quote_spanned! { kind.span()=>
@@ -288,7 +291,7 @@ pub fn gen_app_augmentation(
 
                     Ty::OptionOption => quote_spanned! { ty.span()=>
                         .takes_value(true)
-                        .multiple(false)
+                        .multiple_values(false)
                         .min_values(0)
                         .max_values(1)
                         #validator
@@ -296,7 +299,7 @@ pub fn gen_app_augmentation(
 
                     Ty::OptionVec => quote_spanned! { ty.span()=>
                         .takes_value(true)
-                        .multiple(true)
+                        .multiple_values(true)
                         .min_values(0)
                         #validator
                     },
@@ -312,7 +315,7 @@ pub fn gen_app_augmentation(
 
                         quote_spanned! { ty.span()=>
                             .takes_value(true)
-                            .multiple(true)
+                            .multiple_values(true)
                             #possible_values
                             #validator
                         }
@@ -324,7 +327,7 @@ pub fn gen_app_augmentation(
 
                     Ty::Other if flag => quote_spanned! { ty.span()=>
                         .takes_value(false)
-                        .multiple(false)
+                        .multiple_values(false)
                     },
 
                     Ty::Other => {
